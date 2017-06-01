@@ -7,11 +7,13 @@ import os
 import sys
 import yaml
 import uuid
+import pprint
 
 from copy import deepcopy
 
 manager = Manager()
 
+pp = pprint.PrettyPrinter()
 s3 = boto3.client('s3')
 
 META_REDIRECT_TEMPLATE = '''
@@ -50,6 +52,32 @@ BUCKET_CORS = {
         'MaxAgeSeconds': 3000
     }]
 }
+
+@manager.command
+def check_index(bucket_name):
+    obj = {
+        'Bucket': bucket_name,
+        'Key': 'index.html'
+    }
+    obj = s3.get_object(**obj)
+    pp.pprint(s3.get_object_acl(**obj))
+
+
+@manager.command
+def check_bucket(bucket_name):
+    bucket = boto3.resource('s3').Bucket(bucket_name)
+    cors = bucket.Cors()
+    cors.load()
+    pp.pprint(cors.cors_rules)
+
+    policy = bucket.Policy()
+    policy.load()
+    pp.pprint(policy.policy)
+
+    website = bucket.Website()
+    website.load()
+    pp.pprint(website)
+
 
 @manager.command
 def setup_bucket(bucket_name, redirect_domain=None, redirect_proto=None, index_doc=None, error_doc=None):
@@ -139,7 +167,7 @@ def upload_file_as(bucket, filename, keyname, **kwargs):
             kwargs['Body'] = filehandle
             kwargs['Key'] = keyname
 
-            client.put_object(**kwargs)
+            s3.put_object(**kwargs)
 
     except IOError:
         print 'Cannot upload file. It does not exist or was not readable: {}'.format(filename)
