@@ -43,7 +43,8 @@ BUCKET_CORS = {
             '*'
         ],
         'AllowedMethods': [
-            'GET'
+            'GET',
+            'HEAD'
         ],
         'AllowedHeaders': [
             'Authorization',
